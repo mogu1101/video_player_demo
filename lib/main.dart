@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 
 void main() {
@@ -116,13 +115,17 @@ class _VideoPageState extends State<VideoPage> {
       duration = _controller.value.duration;
       position = _controller.value.position;
       buffered = _controller.value.buffered;
-      isBuffering = _controller.value.isBuffering;
+      isBuffering = buffered.isEmpty ||
+          (buffered.last.end < position + Duration(seconds: 1) &&
+              buffered.last.end < duration);
       if (buffered.isNotEmpty) {
         _bufferedValue = buffered.first.end.inMilliseconds /
             _controller.value.duration.inMilliseconds;
       }
+      // debugPrint(
+      // '[Video Value]: ${_controller.value}\nposition=$position, duration=$duration, isBuffering=$isBuffering, buffered=${buffered} -> ${position.inMilliseconds / duration.inMilliseconds} $_bufferedValue');
       debugPrint(
-          '[Video Value]: ${_controller.value}\nposition=$position, duration=$duration, isBuffering=$isBuffering, buffered=${buffered} -> ${position.inMilliseconds / duration.inMilliseconds} $_bufferedValue');
+          '----------isDragging: $_isDragging, $isBuffering, $_progressValue');
       if (!_isDragging && duration > Duration.zero) {
         _progressValue = position.inMilliseconds
             .toDouble()
@@ -133,20 +136,11 @@ class _VideoPageState extends State<VideoPage> {
       }
       setState(() {});
     });
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-      DeviceOrientation.landscapeRight,
-      DeviceOrientation.landscapeLeft,
-    ]);
   }
 
   @override
   void dispose() {
     _controller.dispose();
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-    ]);
     super.dispose();
   }
 
@@ -187,7 +181,7 @@ class _VideoPageState extends State<VideoPage> {
                                 child: Text('暂停'),
                               ),
                             ),
-                          if (_controller.value.isBuffering)
+                          if (isBuffering)
                             Center(
                               child: CircularProgressIndicator(
                                 backgroundColor: Colors.black.withOpacity(0.1),
@@ -251,12 +245,12 @@ class _VideoPageState extends State<VideoPage> {
                                             setState(() {});
                                           },
                                           onChangeEnd: (value) async {
-                                            _isDragging = false;
                                             _progressValue =
                                                 value.toInt().toDouble();
                                             await _controller.seekTo(Duration(
                                                 milliseconds: value.toInt()));
-                                            _controller.play();
+                                            await _controller.play();
+                                            _isDragging = false;
                                             setState(() {});
                                           },
                                         ),
