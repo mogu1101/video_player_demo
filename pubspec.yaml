@@ -28,8 +28,9 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
+  provider: ^5.0.0
   video_player:
-    path: /Users/liujinjun/coding/GitHub/plugins/packages/video_player/video_player
+    path: /Users/liujinjun/coding/GitHub/video_player/video_player
 #  video_player:
 #    git:
 #      url: https://github.com/mogu1101/plugins.git
