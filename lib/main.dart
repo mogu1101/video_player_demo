@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:video_player_demo/video_player.dart';
 
 void main() {
   runApp(MyApp());
@@ -20,7 +21,7 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key? key, this.title = ''}) : super(key: key);
+  MyHomePage({Key key, this.title = ''}) : super(key: key);
   final String title;
 
   @override
@@ -296,7 +297,7 @@ class VideoPage extends StatefulWidget {
 }
 
 class _VideoPageState extends State<VideoPage> {
-  late VideoPlayerController _controller;
+  SciVideoPlayerController _controller;
   var _isDragging = false;
   var _progressValue = 0.0;
   var _bufferedValue = 0.0;
@@ -310,36 +311,36 @@ class _VideoPageState extends State<VideoPage> {
   void initState() {
     super.initState();
     final url = widget.url;
-    _controller = VideoPlayerController.network(url)
-      ..initialize().then((value) {
-        _controller.play();
-        setState(() {});
-      });
-    _controller.addListener(() {
-      duration = _controller.value.duration;
-      position = _controller.value.position;
-      buffered = _controller.value.buffered;
-      isBuffering = buffered.isEmpty ||
-          (buffered.last.end < position + Duration(seconds: 1) &&
-              buffered.last.end < duration);
-      if (buffered.isNotEmpty) {
-        _bufferedValue = buffered.first.end.inMilliseconds /
-            _controller.value.duration.inMilliseconds;
-      }
-      // debugPrint(
-      // '[Video Value]: ${_controller.value}\nposition=$position, duration=$duration, isBuffering=$isBuffering, buffered=${buffered} -> ${position.inMilliseconds / duration.inMilliseconds} $_bufferedValue');
-      debugPrint(
-          '----------isDragging: $_isDragging, $isBuffering, $_progressValue, $buffered');
-      if (!_isDragging && duration > Duration.zero) {
-        _progressValue = position.inMilliseconds
-            .toDouble()
-            .clamp(0, duration.inMilliseconds.toDouble());
-      }
-      if (position > duration) {
-        _controller.seekTo(Duration.zero);
-      }
-      setState(() {});
-    });
+    _controller = SciVideoPlayerController.network(url);
+    //   ..initialize().then((value) {
+    //     _controller.play();
+    //     setState(() {});
+    //   });
+    // _controller.addListener(() {
+    //   duration = _controller.value.duration;
+    //   position = _controller.value.position;
+    //   buffered = _controller.value.buffered;
+    //   isBuffering = buffered.isEmpty ||
+    //       (buffered.last.end < position + Duration(seconds: 1) &&
+    //           buffered.last.end < duration);
+    //   if (buffered.isNotEmpty) {
+    //     _bufferedValue = buffered.first.end.inMilliseconds /
+    //         _controller.value.duration.inMilliseconds;
+    //   }
+    //   // debugPrint(
+    //   // '[Video Value]: ${_controller.value}\nposition=$position, duration=$duration, isBuffering=$isBuffering, buffered=${buffered} -> ${position.inMilliseconds / duration.inMilliseconds} $_bufferedValue');
+    //   debugPrint(
+    //       '----------isDragging: $_isDragging, $isBuffering, $_progressValue, $buffered');
+    //   if (!_isDragging && duration > Duration.zero) {
+    //     _progressValue = position.inMilliseconds
+    //         .toDouble()
+    //         .clamp(0, duration.inMilliseconds.toDouble());
+    //   }
+    //   if (position > duration) {
+    //     _controller.seekTo(Duration.zero);
+    //   }
+    //   setState(() {});
+    // });
   }
 
   @override
@@ -357,130 +358,131 @@ class _VideoPageState extends State<VideoPage> {
             : AppBar(
                 title: Text('Video'),
               ),
-        body: Container(
-          color: Colors.black,
-          child: Center(
-            child: _controller.value.isInitialized
-                ? GestureDetector(
-                    onTap: () {
-                      if (_controller.value.isPlaying) {
-                        _controller.pause();
-                      } else {
-                        _controller.play();
-                      }
-                      setState(() {});
-                    },
-                    child: AspectRatio(
-                      aspectRatio: _controller.value.aspectRatio,
-                      child: Stack(
-                        children: [
-                          VideoPlayer(_controller),
-                          if (!_controller.value.isPlaying)
-                            Center(
-                              child: Container(
-                                width: 40,
-                                height: 40,
-                                alignment: Alignment.center,
-                                color: Colors.white,
-                                child: Text('暂停'),
-                              ),
-                            ),
-                          if (isBuffering)
-                            Center(
-                              child: CircularProgressIndicator(
-                                backgroundColor: Colors.black.withOpacity(0.1),
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            ),
-                          Positioned(
-                            bottom: 10,
-                            left: 20,
-                            right: 20,
-                            child: Row(
-                              children: [
-                                Text(
-                                  '${position.inMinutes.toString().padLeft(2, '0')} : ${(position.inSeconds % 60).toString().padLeft(2, '0')}',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                Expanded(
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 24.0),
-                                        child: LinearProgressIndicator(
-                                          backgroundColor: Colors.transparent,
-                                          valueColor: AlwaysStoppedAnimation<
-                                                  Color>(
-                                              Colors.black.withOpacity(0.5)),
-                                          value: _bufferedValue,
-                                          minHeight: 4,
-                                        ),
-                                      ),
-                                      SliderTheme(
-                                        data: SliderTheme.of(context).copyWith(
-                                          activeTrackColor: Colors.white,
-                                          inactiveTrackColor:
-                                              Colors.white.withOpacity(0.2),
-                                          thumbShape: RoundSliderThumbShape(
-                                            enabledThumbRadius: 6,
-                                            disabledThumbRadius: 8,
-                                          ),
-                                          thumbColor: Colors.white,
-                                          trackHeight: 4,
-                                        ),
-                                        child: Slider(
-                                          value: _progressValue,
-                                          min: 0,
-                                          max: _controller
-                                              .value.duration.inMilliseconds
-                                              .toDouble(),
-                                          onChangeStart: (value) {
-                                            _isDragging = true;
-                                            // _progressValue = value;
-                                            setState(() {});
-                                          },
-                                          onChanged: (value) {
-                                            debugPrint('Change Value: $value');
-                                            _isDragging = true;
-                                            _progressValue = value;
-                                            setState(() {});
-                                          },
-                                          onChangeEnd: (value) async {
-                                            _progressValue =
-                                                value.toInt().toDouble();
-                                            await _controller.seekTo(Duration(
-                                                milliseconds: value.toInt()));
-                                            await _controller.play();
-                                            _isDragging = false;
-                                            setState(() {});
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Text(
-                                  '${duration.inMinutes.toString().padLeft(2, '0')} : ${(duration.inSeconds % 60).toString().padLeft(2, '0')}',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ],
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                  )
-                : Center(
-                    child: CircularProgressIndicator(
-                      backgroundColor: Colors.black.withOpacity(0.1),
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  ),
-          ),
-        ),
+        body: SciVideoPlayer(_controller),
+        // Container(
+        //   color: Colors.black,
+        //   child: Center(
+        //     child: _controller.value.isInitialized
+        //         ? GestureDetector(
+        //             onTap: () {
+        //               if (_controller.value.isPlaying) {
+        //                 _controller.pause();
+        //               } else {
+        //                 _controller.play();
+        //               }
+        //               setState(() {});
+        //             },
+        //             child: AspectRatio(
+        //               aspectRatio: _controller.value.aspectRatio,
+        //               child: Stack(
+        //                 children: [
+        //                   VideoPlayer(_controller),
+        //                   if (!_controller.value.isPlaying)
+        //                     Center(
+        //                       child: Container(
+        //                         width: 40,
+        //                         height: 40,
+        //                         alignment: Alignment.center,
+        //                         color: Colors.white,
+        //                         child: Text('暂停'),
+        //                       ),
+        //                     ),
+        //                   if (isBuffering)
+        //                     Center(
+        //                       child: CircularProgressIndicator(
+        //                         backgroundColor: Colors.black.withOpacity(0.1),
+        //                         valueColor:
+        //                             AlwaysStoppedAnimation<Color>(Colors.white),
+        //                       ),
+        //                     ),
+        //                   Positioned(
+        //                     bottom: 10,
+        //                     left: 20,
+        //                     right: 20,
+        //                     child: Row(
+        //                       children: [
+        //                         Text(
+        //                           '${position.inMinutes.toString().padLeft(2, '0')} : ${(position.inSeconds % 60).toString().padLeft(2, '0')}',
+        //                           style: TextStyle(color: Colors.white),
+        //                         ),
+        //                         Expanded(
+        //                           child: Stack(
+        //                             alignment: Alignment.center,
+        //                             children: [
+        //                               Padding(
+        //                                 padding: const EdgeInsets.symmetric(
+        //                                     horizontal: 24.0),
+        //                                 child: LinearProgressIndicator(
+        //                                   backgroundColor: Colors.transparent,
+        //                                   valueColor: AlwaysStoppedAnimation<
+        //                                           Color>(
+        //                                       Colors.black.withOpacity(0.5)),
+        //                                   value: _bufferedValue,
+        //                                   minHeight: 4,
+        //                                 ),
+        //                               ),
+        //                               SliderTheme(
+        //                                 data: SliderTheme.of(context).copyWith(
+        //                                   activeTrackColor: Colors.white,
+        //                                   inactiveTrackColor:
+        //                                       Colors.white.withOpacity(0.2),
+        //                                   thumbShape: RoundSliderThumbShape(
+        //                                     enabledThumbRadius: 6,
+        //                                     disabledThumbRadius: 8,
+        //                                   ),
+        //                                   thumbColor: Colors.white,
+        //                                   trackHeight: 4,
+        //                                 ),
+        //                                 child: Slider(
+        //                                   value: _progressValue,
+        //                                   min: 0,
+        //                                   max: _controller
+        //                                       .value.duration.inMilliseconds
+        //                                       .toDouble(),
+        //                                   onChangeStart: (value) {
+        //                                     _isDragging = true;
+        //                                     // _progressValue = value;
+        //                                     setState(() {});
+        //                                   },
+        //                                   onChanged: (value) {
+        //                                     debugPrint('Change Value: $value');
+        //                                     _isDragging = true;
+        //                                     _progressValue = value;
+        //                                     setState(() {});
+        //                                   },
+        //                                   onChangeEnd: (value) async {
+        //                                     _progressValue =
+        //                                         value.toInt().toDouble();
+        //                                     await _controller.seekTo(Duration(
+        //                                         milliseconds: value.toInt()));
+        //                                     await _controller.play();
+        //                                     _isDragging = false;
+        //                                     setState(() {});
+        //                                   },
+        //                                 ),
+        //                               ),
+        //                             ],
+        //                           ),
+        //                         ),
+        //                         Text(
+        //                           '${duration.inMinutes.toString().padLeft(2, '0')} : ${(duration.inSeconds % 60).toString().padLeft(2, '0')}',
+        //                           style: TextStyle(color: Colors.white),
+        //                         ),
+        //                       ],
+        //                     ),
+        //                   )
+        //                 ],
+        //               ),
+        //             ),
+        //           )
+        //         : Center(
+        //             child: CircularProgressIndicator(
+        //               backgroundColor: Colors.black.withOpacity(0.1),
+        //               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+        //             ),
+        //           ),
+        //   ),
+        // ),
       ),
     );
   }
